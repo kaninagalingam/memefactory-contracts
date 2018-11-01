@@ -3,7 +3,6 @@ pragma solidity ^0.4.24;
 import "./RegistryEntryFactory.sol";
 import "./Meme.sol";
 import "./MemeToken.sol";
-import "zos-lib/contracts/Initializable.sol";
 
 /**
  * @title Factory contract for creating Meme contracts
@@ -11,29 +10,14 @@ import "zos-lib/contracts/Initializable.sol";
  * @dev Users submit new memes into this contract.
  */
 
-contract MemeFactory is Initializable, RegistryEntryFactory {
-  uint public version; // = 1;
+contract MemeFactory is RegistryEntryFactory {
+  uint public constant version = 1;
   MemeToken public memeToken;
 
-  /* function MemeFactory(Registry _registry, MiniMeToken _registryToken, MemeToken _memeToken) */
-  /* RegistryEntryFactory(_registry, _registryToken) */
-  /* { */
-  /*   memeToken = _memeToken; */
-  /* } */
-
-  function initialize(
-    Registry _registry,
-    MiniMeToken _registryToken,
-    MemeToken _memeToken,
-    uint _version)
-  initializer
-  public
+  function MemeFactory(Registry _registry, MiniMeToken _registryToken, MemeToken _memeToken)
+  RegistryEntryFactory(_registry, _registryToken)
   {
-
-    RegistryEntryFactory.initialize(_registry, _registryToken);
-
     memeToken = _memeToken;
-    version =_version;
   }
 
   /**

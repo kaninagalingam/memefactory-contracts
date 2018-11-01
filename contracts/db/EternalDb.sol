@@ -1,7 +1,6 @@
 pragma solidity ^0.4.18;
 
 import "../auth/DSAuth.sol";
-import "zos-lib/contracts/Initializable.sol";
 
 /**
  * @title Contract to store arbitrary state data, decoupled from any logic related to it
@@ -11,18 +10,15 @@ import "zos-lib/contracts/Initializable.sol";
  * It also provides way set/get multiple values in single transaction
  */
 
-contract EternalDb is Initializable, DSAuth {
+contract EternalDb is DSAuth {
 
   enum Types {UInt, String, Address, Bytes, Bytes32, Boolean, Int}
 
   event EternalDbEvent(bytes32[] records, uint[] values, uint timestamp);
 
-  /* function EternalDb(){ */
-  /* } */
-
-  function initialize() initializer public {
+  function EternalDb(){
   }
-  
+
   ////////////
   //UInt
   ////////////

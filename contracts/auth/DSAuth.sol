@@ -13,8 +13,6 @@
 
 pragma solidity ^0.4.13;
 
-import "zos-lib/contracts/Initializable.sol";
-
 contract DSAuthority {
   function canCall(
     address src, address dst, bytes4 sig
@@ -26,13 +24,11 @@ contract DSAuthEvents {
   event LogSetOwner     (address indexed owner);
 }
 
-contract DSAuth is Initializable, DSAuthEvents {
+contract DSAuth is DSAuthEvents {
   DSAuthority  public  authority;
   address      public  owner;
-  
-  function initialize()
-    public
-    initializer {
+
+  function DSAuth() public {
     owner = msg.sender;
     LogSetOwner(msg.sender);
   }

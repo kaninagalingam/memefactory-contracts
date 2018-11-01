@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "ganache": "ganache-cli -p 8549",
-    "start": "npx truffle compile && npx truffle --network local exec index.js"
+    "start": "npx truffle compile && npx truffle --network ganache exec index.js"
   },
   "dev-dependencies": {
     "ganache-cli": "^6.1.8"

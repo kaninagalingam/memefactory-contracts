@@ -3,7 +3,6 @@ pragma solidity ^0.4.24;
 import "./Registry.sol";
 import "./proxy/Forwarder.sol";
 import "./token/minime/MiniMeToken.sol";
-import "zos-lib/contracts/Initializable.sol";
 
 /**
  * @title Base Factory contract for creating RegistryEntry contracts
@@ -11,25 +10,16 @@ import "zos-lib/contracts/Initializable.sol";
  * @dev This contract is meant to be extended by other factory contracts
  */
 
-contract RegistryEntryFactory is Initializable, ApproveAndCallFallBack {
+contract RegistryEntryFactory is ApproveAndCallFallBack {
   Registry public registry;
   MiniMeToken public registryToken;
+  bytes32 public constant depositKey = sha3("deposit");
 
-  /* function RegistryEntryFactory(Registry _registry, MiniMeToken _registryToken) { */
-  /*   registry = _registry; */
-  /*   registryToken = _registryToken; */
-  /* } */
-
-  function initialize(
-    Registry _registry,
-    MiniMeToken _registryToken)  
-  initializer
-  public
-  {
+  function RegistryEntryFactory(Registry _registry, MiniMeToken _registryToken) {
     registry = _registry;
     registryToken = _registryToken;
   }
-  
+
   /**
    * @dev Creates new forwarder contract as registry entry
    * Transfers required deposit from creator into this contract
@@ -40,7 +30,7 @@ contract RegistryEntryFactory is Initializable, ApproveAndCallFallBack {
    * @return Address of a new registry entry forwarder contract
    */
   function createRegistryEntry(address _creator) internal returns (address) {
-    uint deposit = registry.db().getUIntValue(registry.depositKey());
+    uint deposit = registry.db().getUIntValue(depositKey);
     address regEntry = new Forwarder();
     require(registryToken.transferFrom(_creator, this, deposit), "RegistryEntryFactory: couldn't transfer deposit");
     require(registryToken.approve(regEntry, deposit), "RegistryEntryFactory: Deposit not approved");
