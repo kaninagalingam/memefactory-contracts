@@ -29,7 +29,7 @@ contract MemeAuctionFactory is ERC721Receiver {
   mapping(address => bool) public isMemeAuction;
 
   modifier onlyMemeAuction() {
-    require(isMemeAuction[msg.sender], "MemeAuctionFactory: onlyMemeAuction falied");
+    require(isMemeAuction[msg.sender], "MemeAuctionFactory: onlyMemeAuction failed");
     _;
   }
 
