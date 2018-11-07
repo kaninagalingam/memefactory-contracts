@@ -68,21 +68,21 @@ module.exports = function(deployer, network, accounts) {
   }).then ((dankToken) => {
     console.log ("@@@ DankToken address", dankToken.address);
   });
-  
+
   deployer.deploy (DistrictConfig, accounts[0], accounts[0], 0, opts);
 
   deployer.then (() => {
     return [DSGuard.deployed (),
             DistrictConfig.deployed ()];
   }).then ((promises) => {
-    return Promise.all(promises);    
+    return Promise.all(promises);
   }).then (([dSGuard,
              districtConfig]) => {
                return districtConfig.setAuthority(dSGuard.address, opts);
              }).then ((tx) => {
                console.log("@@@ DSGuard/setAuthority transaction", tx.receipt.transactionHash, "succesfull");
              });
-  
+
   deployer.deploy (MemeRegistryDb, opts);
   deployer.deploy (ParamChangeRegistryDb, opts);
 
@@ -100,7 +100,7 @@ module.exports = function(deployer, network, accounts) {
 
   // link bytecode
   deployer.deploy (ParamChangeRegistry, opts).then ((instance) => {
-    return linkBytecode(ParamChangeRegistryForwarder, forwarderTargetPlaceholder, instance.address);
+     linkBytecode(ParamChangeRegistryForwarder, forwarderTargetPlaceholder, instance.address);
   });
 
   deployer.deploy(ParamChangeRegistryForwarder, opts)
@@ -120,31 +120,30 @@ module.exports = function(deployer, network, accounts) {
   }).then (([memeRegistryDb,
              memeRegistry,
              memeRegistryForwarder]) => {
-               var payload = memeRegistry.contract.construct.getData(memeRegistryDb.address);               
+               var payload = memeRegistry.contract.construct.getData(memeRegistryDb.address);
                return memeRegistryForwarder.sendTransaction({data: payload,
                                                              from: address});
              }).then ((tx) => {
                console.log ("@@@ MemeRegistry/construct tx", tx.receipt.transactionHash, "successful");
              });
-  
+
   // call registry/construct via forwarder
   deployer.then (function () {
     return [ParamChangeRegistryDb.deployed (),
             ParamChangeRegistry.deployed (),
-            ParamChangeRegistryForwarder.deployed ()];    
+            ParamChangeRegistryForwarder.deployed ()];
   }).then ( (promises) => {
     return Promise.all(promises);
   }).then (([paramChangeRegistryDb,
              paramChangeRegistry,
              paramChangeRegistryForwarder]) => {
-               var payload = paramChangeRegistry.contract.construct.getData(paramChangeRegistryDb.address);               
+               var payload = paramChangeRegistry.contract.construct.getData(paramChangeRegistryDb.address);
                return paramChangeRegistryForwarder.sendTransaction({data: payload,
                                                                     from: address});
              }).then ((tx) => {
                console.log ("@@@ ParamChangeRegistryForwarder/construct tx", tx.receipt.transactionHash, "successful");
              });
-  
-  
+
   deployer.then (() => {
     return MemeRegistryForwarder.deployed ();
   }).then ((instance) => {
@@ -153,44 +152,31 @@ module.exports = function(deployer, network, accounts) {
     console.log ("@@@ MemeToken address", memeToken.address);
   });
 
-
-
-  // TODO: link placehodlers
-  // deployer.then ( () => {
-  //   return [
-  //     DankToken.deployed (),
-  //     MemeRegistryForwarder.deployed (),
-  //     DistrictConfig.deployed (),
-  //     MemeToken.deployed ()
-  //   ]
-  // }).then ( (promises) => {
-  //   Promise.all(promises).then ( ([
-  //     dankToken,
-  //     memeRegistryForwarder,
-  //     districtConfig,
-  //     memeToken
-  //   ]) => {
-
-  //     console.log ("@@@ linker",
-  //                  dankToken.address,
-  //                  memeRegistryForwarder.address,
-  //                  districtConfig.address,
-  //                  memeToken.address
-  //                 );
-
-  //     // linkBytecode.replace(Meme, dankTokenPlaceholder, dankToken.address);
-  //     // linkBytecode.replace(Meme, registryPlaceholder, memeRegistryForwarder.address);
-  //     // linkBytecode.replace(Meme, districtConfigPlaceholder, districtConfig.address);
-  //     // linkBytecode.replace(Meme, memeTokenPlaceholder, memeToken.address);
-
-  //   });
-  // });
+  // link placehodlers
+  deployer.then ( () => {
+    return [DankToken.deployed (),
+            MemeRegistryForwarder.deployed (),
+            DistrictConfig.deployed (),
+            MemeToken.deployed ()];
+  }).then ((promises) => {
+    return Promise.all(promises);
+  }).then (([dankToken,
+             memeRegistryForwarder,
+             districtConfig,
+             memeToken]) => {
+               linkBytecode(Meme, dankTokenPlaceholder, dankToken.address);
+               linkBytecode(Meme, registryPlaceholder, memeRegistryForwarder.address);
+               linkBytecode(Meme, districtConfigPlaceholder, districtConfig.address);
+               linkBytecode(Meme, memeTokenPlaceholder, memeToken.address);               
+             });
+  deployer.deploy(Meme, opts);
 
 
 
 
 
-  // // console.log (Meme.bytecode);
+
+
 
   // // deployer.deploy (Meme, opts)
   // // deployer.deploy (ParamChange, opts)

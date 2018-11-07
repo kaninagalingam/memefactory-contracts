@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 const utils = {
-  
+
   copy: (srcName, dstName, network, address) => {
     const srcPath = __dirname + '/../build/contracts/' + srcName + '.json';
     const dstPath = __dirname + '/../build/contracts/' + dstName + '.json';
@@ -30,9 +30,10 @@ const utils = {
 
   linkBytecode: (contract, placeholder, replacement) => {
     var replacement = replacement.replace('0x', '');
-    var bytecode = contract.bytecode.replace(placeholder, replacement);
+    // var bytecode = contract.bytecode.replace(placeholder, replacement);
+    var bytecode = contract.bytecode.split(placeholder).join(replacement);
     contract.bytecode = bytecode;
-    return contract;
+    // return contract;
   }
 
   // function waitForReceipt(hash, cb) {
@@ -54,7 +55,7 @@ const utils = {
   //     }
   //   });
   // }
-  
+
 };
 
 module.exports = utils;
