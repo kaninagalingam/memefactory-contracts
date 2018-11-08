@@ -26,8 +26,12 @@ const ParamChangeRegistryForwarder = artifacts.require("ParamChangeRegistryForwa
 const MemeToken = artifacts.require("MemeToken");
 const Meme = artifacts.require("Meme");
 const ParamChange = artifacts.require("ParamChange");
-const MemeFactory = artifacts.require("MemeFactory");
-const ParamChangeFactory = artifacts.require("ParamChangeFactory");
+
+// copy for placeholder replacement
+copy ("MemeFactory", "MemeFactoryCp");
+const MemeFactory = artifacts.require("MemeFactoryCp");
+copy ("ParamChangeFactory", "ParamChangeFactoryCp")
+const ParamChangeFactory = artifacts.require("ParamChangeFactoryCp");
 
 copy ("MutableForwarder", "MemeAuctionFactoryForwarder");
 const MemeAuctionFactoryForwarder = artifacts.require("MemeAuctionFactoryForwarder");
@@ -100,7 +104,7 @@ module.exports = function(deployer, network, accounts) {
 
   // link bytecode
   deployer.deploy (ParamChangeRegistry, opts).then ((instance) => {
-     linkBytecode(ParamChangeRegistryForwarder, forwarderTargetPlaceholder, instance.address);
+    linkBytecode(ParamChangeRegistryForwarder, forwarderTargetPlaceholder, instance.address);
   });
 
   deployer.deploy(ParamChangeRegistryForwarder, opts)
@@ -167,10 +171,91 @@ module.exports = function(deployer, network, accounts) {
                linkBytecode(Meme, dankTokenPlaceholder, dankToken.address);
                linkBytecode(Meme, registryPlaceholder, memeRegistryForwarder.address);
                linkBytecode(Meme, districtConfigPlaceholder, districtConfig.address);
-               linkBytecode(Meme, memeTokenPlaceholder, memeToken.address);               
+               linkBytecode(Meme, memeTokenPlaceholder, memeToken.address);
              });
   deployer.deploy(Meme, opts);
 
+  // link placehodlers
+  deployer.then (() => {
+    return [DankToken.deployed (),
+            ParamChangeRegistryForwarder.deployed ()];
+  }).then ((promises) => {
+    return Promise.all (promises);
+  }).then (([dankToken,
+             paramChangeRegistryForwarder]) => {
+
+               linkBytecode(ParamChange, dankTokenPlaceholder, dankToken.address);
+               linkBytecode(ParamChange, registryPlaceholder, paramChangeRegistryForwarder.address);
+
+               // console.log( dankTokenPlaceholder, dankToken.address);
+               // console.log( registryPlaceholder, paramChangeRegistryForwarder.address);
+               // console.log (ParamChange.bytecode);
+
+             });
+  deployer.deploy (ParamChange, opts);
+
+  // link placehodlers
+  deployer.then (() => {
+    return Meme.deployed ();
+  }).then ((meme) => {
+    linkBytecode(MemeFactory, forwarderTargetPlaceholder, meme.address);
+  });
+
+  deployer.then (() => {
+    return [MemeRegistryForwarder.deployed (),
+            DankToken.deployed (),
+            MemeToken.deployed ()];
+  }).then (([memeRegistryForwarder,
+             dankToken,
+             memeToken]) => {
+               return deployer.deploy (MemeFactory, memeRegistryForwarder.address, dankToken.address, memeToken.address, opts);
+             }).then ((memeFactory) => {
+               console.log ("@@@ MemeFactory address", memeFactory.address);
+             });
+
+  // link placehodlers
+  deployer.then (() => {
+    return ParamChange.deployed ();
+  }).then ((instance) => {
+    linkBytecode(ParamChangeFactory, forwarderTargetPlaceholder, instance.address);
+  });
+
+  deployer.then (() => {
+    return [ParamChangeRegistry.deployed (),
+            DankToken.deployed ()];
+  }).then (([paramChangeRegistry,
+             dankToken]) => {
+               return deployer.deploy (ParamChangeFactory, paramChangeRegistry.address, dankToken.address, opts);
+             }).then ((instance) => {
+               console.log ("@@@ ParamChangeFactory address", instance.address);
+             });
+
+  // MemeRegistryDb/setInt values
+  deployer.then (() => {
+    return MemeRegistryDb.deployed ();
+  }).then ((instance) => {
+
+    return instance.setUIntValues (['challengePeriodDuration',
+                                    'commitPeriodDuration',
+                                    'revealPeriodDuration',
+                                    'deposit',
+                                    'challengeDispensation',
+                                    'voteQuorum',
+                                    'maxTotalSupply',
+                                    'maxAuctionDuration'].map (web3.sha3),
+                                   [600,
+                                    600,
+                                    600,
+                                    "1000000000000000000",
+                                    50,
+                                    50,
+                                    10,
+                                    12096000],
+                                   opts);
+
+  }).then ((tx) => {
+    console.log ("@@@ MemeRegistryDb/setUintValues tx", tx.receipt.transactionHash, "successful");
+  });
 
 
 
@@ -178,12 +263,10 @@ module.exports = function(deployer, network, accounts) {
 
 
 
-  // // deployer.deploy (Meme, opts)
-  // // deployer.deploy (ParamChange, opts)
-  // // deployer.deploy (MemeFactory, opts)
-  // // deployer.deploy (ParamChangeFactory, opts)
 
-  // // EternalDb/setInt values
+
+
+
 
 
 
