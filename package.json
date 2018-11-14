@@ -22,7 +22,6 @@
     "ganache": "ganache-cli -p 8549",
     "compile": "truffle compile",
     "migrate": "truffle migrate --network ganache --reset",
-    "start": "npx truffle compile && npx truffle --network ganache exec index.js",
     "console": "truffle console --network ganache"
   },
   "dependencies": {
