@@ -66,7 +66,6 @@ module.exports = function(deployer, network, accounts) {
   deployer.then (() => {
     return DSGuard.deployed ();
   }).then ((instance) => {
-    // console.log("@@@ DSGuard ", instance.address);
     return instance.setAuthority(instance.address, opts);
   }).then ((tx) => {
     console.log("@@@ DSGuard/setAuthority transaction", tx.receipt.transactionHash, "succesful");
@@ -104,7 +103,7 @@ module.exports = function(deployer, network, accounts) {
 
   // link bytecode
   deployer.deploy (MemeRegistry, opts).then ((instance) => {
-    return linkBytecode(MemeRegistryForwarder, forwarderTargetPlaceholder, instance.address);
+    linkBytecode(MemeRegistryForwarder, forwarderTargetPlaceholder, instance.address);
   });
 
   deployer.deploy(MemeRegistryForwarder, opts)
@@ -190,6 +189,20 @@ module.exports = function(deployer, network, accounts) {
      });
   deployer.deploy(Meme, opts);
 
+  // deployer.then (() => {
+  //   return Meme.deployed ();
+  // }).then ((instance) => {
+  //   return [instance.districtConfig (),
+  //           instance.memeToken ()];
+  // }).then ((promises) => {
+  //   return Promise.all (promises);
+  // }).then ((
+  //   [districtConfig,
+  //    memeToken]) => {
+  //      console.log ("@@@ Meme/districtConfig", districtConfig);
+  //      console.log ("@@@ Meme/memeToken", memeToken);
+  //    });
+
   // link placehodlers
   deployer.then (() => {
     return [DankToken.deployed (),
@@ -199,14 +212,8 @@ module.exports = function(deployer, network, accounts) {
   }).then ((
     [dankToken,
      paramChangeRegistryForwarder]) => {
-
        linkBytecode(ParamChange, dankTokenPlaceholder, dankToken.address);
        linkBytecode(ParamChange, registryPlaceholder, paramChangeRegistryForwarder.address);
-
-       // console.log( dankTokenPlaceholder, dankToken.address);
-       // console.log( registryPlaceholder, paramChangeRegistryForwarder.address);
-       // console.log (ParamChange.bytecode);
-
      });
   deployer.deploy (ParamChange, opts);
 
@@ -419,15 +426,7 @@ module.exports = function(deployer, network, accounts) {
      paramChangeRegistry,
      paramChangeFactory
     ]) => {
-
       var payload = paramChangeRegistry.contract.setFactory.getData(paramChangeFactory.address, true);
-
-      // console.log ("@@@ PAYLOAD",
-      //              paramChangeRegistryForwarder.address,
-      //              paramChangeRegistry.address,
-      //              paramChangeFactory.address,
-      //              payload);
-
       return paramChangeRegistryForwarder.sendTransaction({data: payload,
                                                            from: address});
     }).then ((tx) => {
@@ -468,14 +467,6 @@ module.exports = function(deployer, network, accounts) {
     linkBytecode(MemeAuction, registryPlaceholder, memeRegistryForwarder.address);
     linkBytecode(MemeAuction, districtConfigPlaceholder, districtConfig.address);
     linkBytecode(MemeAuction, memeTokenPlaceholder, memeToken.address);
-
-    // console.log (MemeAuction.bytecode);
-
-    // console.log ('@@@ REPLACEMENT', memeAuctionFactoryForwarder.address,
-    //              memeRegistryForwarder.address,
-    //              districtConfig.address,
-    //              memeToken.address);
-
   });
   deployer.deploy(MemeAuction, opts);
 
@@ -520,9 +511,6 @@ module.exports = function(deployer, network, accounts) {
      memeAuctionFactory,
      memeAuctionFactoryForwarder]) => {
        var payload = memeAuctionFactory.contract.construct.getData(memeToken.address);
-
-       // console.log ('@@@ PAYLOAD', payload);
-
        return memeAuctionFactoryForwarder.sendTransaction({data: payload,
                                                            from: address});
      }).then ((tx) => {
@@ -532,12 +520,26 @@ module.exports = function(deployer, network, accounts) {
   deployer.then (() => {
     return DankToken.deployed ();
   }).then ((instance) => {
-    return instance.balanceOf (address, opts);
-  }).then ( (res) => {
-    console.log ("@@@ DANK balance of:", address, res);
+    return instance.transfer (accounts [9], 15000000000000000000000, opts);
+  }).then ((tx) => {
+    console.log ("@@@ DankToken/transfer tx", tx.receipt.transactionHash, "successful");
   });
 
-  // TODO: generate json -> edn
+  deployer.then (() => {
+    return DankToken.deployed ();
+  }).then ((instance) => {
+    return [instance.balanceOf (address, opts),
+            instance.balanceOf (accounts[9], opts)];
+  }).then ((promises) => {
+    return Promise.all (promises);
+  }).then ( (
+    [balance0,
+     balance9]) => {
+       console.log ("@@@ DANK balance of:", address, balance0);
+       console.log ("@@@ DANK balance of:", accounts [9], balance9);
+     });
+
+  // TODO: json -> edn
   deployer.then (function () {
     return [
       DSGuard.deployed (),

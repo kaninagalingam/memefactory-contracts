@@ -29,11 +29,10 @@ const utils = {
   },
 
   linkBytecode: (contract, placeholder, replacement) => {
+    var placeholder = placeholder.replace('0x', '');
     var replacement = replacement.replace('0x', '');
-    // var bytecode = contract.bytecode.replace(placeholder, replacement);
     var bytecode = contract.bytecode.split(placeholder).join(replacement);
     contract.bytecode = bytecode;
-    // return contract;
   }
 
   // function waitForReceipt(hash, cb) {
