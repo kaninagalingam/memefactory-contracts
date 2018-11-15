@@ -58,11 +58,17 @@ const memeAuctionFactoryPlaceholder = "daffdaffdaffdaffdaffdaffdaffdaffdaffdaff"
 
 module.exports = function(deployer, network, accounts) {
 
+  deployer.then (() => {
+    console.log ("@@@ using Web3 version:", web3.version.api);
+  });
+
   const address = accounts [0];
-  const opts = {gas: 4612388, from: address};
+  const gas = 4612388;
+  const opts = {gas: gas, from: address};
 
   deployer.deploy (DSGuard, opts);
 
+  // make deployed :ds-guard its own autority
   deployer.then (() => {
     return DSGuard.deployed ();
   }).then ((instance) => {
@@ -136,12 +142,37 @@ module.exports = function(deployer, network, accounts) {
     [memeRegistryDb,
      memeRegistry,
      memeRegistryForwarder]) => {
+
+       // TODO: forwarded call does not work
+
+       // var payload = web3.eth.contract(memeRegistry.abi).at(memeRegistry.address).construct.getData(memeRegistryDb.address);
+       // return memeRegistryForwarder.sendTransaction({data: payload,
+       //                                               from: address,
+       //                                               gas: gas});
+
        var payload = memeRegistry.contract.construct.getData(memeRegistryDb.address);
-       return memeRegistryForwarder.sendTransaction({data: payload,
-                                                     from: address});
+
+       return web3.eth.sendTransaction({
+         from: address,
+         to: memeRegistryForwarder.address,
+         data: payload,
+         gas: gas
+       });
+
      }).then ((tx) => {
-       console.log ("@@@ MemeRegistry/construct tx", tx.receipt.transactionHash, "successful");
+       console.log ("@@@ MemeRegistry/construct tx",
+                    tx,
+                    // tx.receipt.transactionHash,
+                    "successful");
      });
+
+  deployer.then (() => {
+    return MemeRegistry.deployed ();
+  }).then ((instance) => {
+    return instance.db ();
+  }).then ( (res) => {
+    console.log ("@@@@ MemeRegistry/db :", res);
+  });
 
   // call registry/construct via forwarder
   deployer.then (function () {
@@ -155,11 +186,20 @@ module.exports = function(deployer, network, accounts) {
      paramChangeRegistry,
      paramChangeRegistryForwarder]) => {
        var payload = paramChangeRegistry.contract.construct.getData(paramChangeRegistryDb.address);
+       // TODO: forwarded call does not work
        return paramChangeRegistryForwarder.sendTransaction({data: payload,
                                                             from: address});
      }).then ((tx) => {
        console.log ("@@@ ParamChangeRegistryForwarder/construct tx", tx.receipt.transactionHash, "successful");
      });
+
+  deployer.then (() => {
+    return ParamChangeRegistry.deployed ();
+  }).then ((instance) => {
+    return instance.db ();
+  }).then ( (res) => {
+    console.log ("@@@@ ParamChangeRegistry/db :", res);
+  });
 
   deployer.then (() => {
     return MemeRegistryForwarder.deployed ();
@@ -404,14 +444,27 @@ module.exports = function(deployer, network, accounts) {
   }).then ((
     [memeRegistryForwarder,
      memeRegistry,
+     memeFactory]) => {
+       var payload = memeRegistry.contract.setFactory.getData(memeFactory.address, true);
+       // TODO: forwarded call does not work
+       return memeRegistryForwarder.sendTransaction({data: payload,
+                                                     from: address});
+     }).then ((tx) => {
+       console.log ("@@@ MemeRegistry/setFactory tx", tx.receipt.transactionHash, "successful");
+     });
+
+  deployer.then (function () {
+    return [MemeRegistryDb.deployed (),
+            MemeFactory.deployed ()]
+  }).then ( (promises) => {
+    return Promise.all(promises);
+  }).then ((
+    [memeRegistryDb,
      memeFactory
     ]) => {
-      var payload = memeRegistry.contract.setFactory.getData(memeFactory.address, true);
-      // console.log ("@@@ PAYLOAD", payload);
-      return memeRegistryForwarder.sendTransaction({data: payload,
-                                                    from: address});
-    }).then ((tx) => {
-      console.log ("@@@ MemeRegistry/setFactory tx", tx.receipt.transactionHash, "successful");
+      return memeRegistryDb.getBooleanValue( web3.sha3 ("isFactory", memeFactory.address));
+    }).then ((res) => {
+      console.log ("@@@@ MemeRegistry/isFactory", res);
     });
 
   // call Registry/setFactory via Forwarder
@@ -424,14 +477,27 @@ module.exports = function(deployer, network, accounts) {
   }).then ((
     [paramChangeRegistryForwarder,
      paramChangeRegistry,
-     paramChangeFactory
-    ]) => {
-      var payload = paramChangeRegistry.contract.setFactory.getData(paramChangeFactory.address, true);
-      return paramChangeRegistryForwarder.sendTransaction({data: payload,
-                                                           from: address});
-    }).then ((tx) => {
-      console.log ("@@@ ParamChangeRegistry/setFactory tx", tx.receipt.transactionHash, "successful");
-    });
+     paramChangeFactory]) => {
+       var payload = paramChangeRegistry.contract.setFactory.getData(paramChangeFactory.address, true);
+       // TODO: forwarded call does not work
+       return paramChangeRegistryForwarder.sendTransaction({data: payload,
+                                                            from: address});
+     }).then ((tx) => {
+       console.log ("@@@ ParamChangeRegistry/setFactory tx", tx.receipt.transactionHash, "successful");
+     });
+
+  deployer.then (function () {
+    return [ParamChangeRegistryDb.deployed (),
+            ParamChangeFactory.deployed ()]
+  }).then ( (promises) => {
+    return Promise.all(promises);
+  }).then ((
+    [paramChangeRegistryDb,
+     paramChangeFactory]) => {
+       return paramChangeRegistryDb.getBooleanValue( web3.sha3 ("isFactory", paramChangeFactory.address));
+     }).then ((res) => {
+       console.log ("@@@@ ParamChangeRegistry/isFactory", res);
+     });
 
   deployer.deploy (MemeAuctionFactoryForwarder, opts);
 
@@ -511,11 +577,20 @@ module.exports = function(deployer, network, accounts) {
      memeAuctionFactory,
      memeAuctionFactoryForwarder]) => {
        var payload = memeAuctionFactory.contract.construct.getData(memeToken.address);
+       // TODO: forwarded call does not work
        return memeAuctionFactoryForwarder.sendTransaction({data: payload,
                                                            from: address});
      }).then ((tx) => {
        console.log ("@@@ MemeAuctionFactory/construct tx", tx.receipt.transactionHash, "successful");
      });
+
+  deployer.then (() => {
+    return MemeAuctionFactory.deployed ();
+  }).then ((instance) => {
+    return instance.memeToken ();
+  }).then ( (res) => {
+    console.log ("@@@@ MemeAuctionFactory/memeToken :", res);
+  });
 
   deployer.then (() => {
     return DankToken.deployed ();
