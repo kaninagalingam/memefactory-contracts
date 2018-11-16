@@ -6,11 +6,7 @@ import "./proxy/Forwarder.sol";
 import "./MemeAuction.sol";
 
 contract MemeAuctionFactory is ERC721Receiver {
-
   address public target; // Keep it here, because this contract is deployed as MutableForwarder
-  MemeToken public memeToken;
-  bool public wasConstructed;
-  mapping(address => bool) public isMemeAuction;
 
   event MemeAuctionStartedEvent(address indexed memeAuction,
                                 uint tokenId,
@@ -27,8 +23,13 @@ contract MemeAuctionFactory is ERC721Receiver {
 
   event MemeAuctionCanceledEvent(address indexed memeAuction);
 
+
+  MemeToken public memeToken;
+  bool public wasConstructed;
+  mapping(address => bool) public isMemeAuction;
+
   modifier onlyMemeAuction() {
-    require(isMemeAuction[msg.sender], "MemeAuctionFactory: onlyMemeAuction failed");
+    require(isMemeAuction[msg.sender], "MemeAuctionFactory: onlyMemeAuction falied");
     _;
   }
 

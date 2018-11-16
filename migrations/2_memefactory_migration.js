@@ -5,6 +5,7 @@ const DSGuard = artifacts.require("DSGuard");
 const MiniMeTokenFactory = artifacts.require("MiniMeTokenFactory");
 const DankToken = artifacts.require("DankToken");
 const DistrictConfig = artifacts.require("DistrictConfig");
+const District0xEmails = artifacts.require ("District0xEmails");
 
 // copy artifacts for placeholder replacements
 copy ("EternalDb", "MemeRegistryDb");
@@ -290,7 +291,7 @@ module.exports = function(deployer, network, accounts) {
                                    [600,
                                     600,
                                     600,
-                                    "1000000000000000000",
+                                    1000000000000000000,
                                     50,
                                     50,
                                     10,
@@ -578,6 +579,27 @@ module.exports = function(deployer, network, accounts) {
          console.log ("@@@ DANK balance of:", accounts [9], balance9);
        });
 
+  deployer.deploy (District0xEmails, opts);
+
+  // TODO: create meme fails
+  deployer.then (() => {
+    return [DankToken.deployed (),
+            MemeFactory.deployed ()]
+  }).then (promises => Promise.all (promises))
+    .then ((
+      [dankToken,
+       memeFactory]) => {
+
+         var instance = web3.eth.contract(memeFactory.abi).at(memeFactory.address); 
+         var payload = instance.createMeme.getData(address, "QmWip6bd1hZXqXMiwzgNkS8dvYMh7ZD9VcjcLSooyEqx1F", 10);
+
+         // console.log ("PAYLOAD", payload);
+
+         return dankToken.approveAndCall (memeFactory.address, 1e21, payload, opts);
+       }).then (tx => {
+         console.log ("DankToken/approveAndCall tx:", tx)
+       });
+   
   // TODO: json -> edn
   deployer.then (function () {
     return [
@@ -598,7 +620,8 @@ module.exports = function(deployer, network, accounts) {
       ParamChangeFactory.deployed (),
       MemeAuctionFactoryForwarder.deployed (),
       MemeAuctionFactory.deployed (),
-      MemeAuction.deployed ()];
+      MemeAuction.deployed (),
+      District0xEmails.deployed ()];
   }).then ( (promises) => {
     return Promise.all(promises);
   }).then ((
@@ -619,7 +642,8 @@ module.exports = function(deployer, network, accounts) {
      paramChangeFactory,
      memeAuctionFactoryForwarder,
      memeAuctionFactory,
-     memeAuction]) => {
+     memeAuction,
+     district0xEmails]) => {
        var smartContracts = JSON.stringify ({
          "district-config" : {"name" : "DistrictConfig",
                               "address" : districtConfig.address},
@@ -656,7 +680,11 @@ module.exports = function(deployer, network, accounts) {
          "meme-registry-fwd" : {"name" : "MutableForwarder",
                                 "address" : memeRegistryForwarder.address},
          "meme-auction-factory-fwd" : {"name" : "MutableForwarder",
-                                       "address" : memeAuctionFactoryForwarder.address}});
+                                       "address" : memeAuctionFactoryForwarder.address},
+         "district0x-emaild" : {"name" : "District0xEmails",
+                                "address" : district0xEmails.address}
+
+       });
        console.log (smartContracts);
        fs.writeFile('smartContracts.json', smartContracts);
      });
