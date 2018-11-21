@@ -12,7 +12,6 @@ module.exports = {
     ropsten: {
       host: 'localhost',
       port: 8545,
-      gas: 6000000,
       gas: 4712388,
       gasPrice: 100000000000,
       network_id: '*'

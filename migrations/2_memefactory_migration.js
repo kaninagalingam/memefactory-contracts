@@ -1,11 +1,20 @@
 const {copy, linkBytecode} = require ("./utils.js");
 const fs = require('fs');
 
-const DSGuard = artifacts.require("DSGuard");
-const MiniMeTokenFactory = artifacts.require("MiniMeTokenFactory");
-const DankToken = artifacts.require("DankToken");
-const DistrictConfig = artifacts.require("DistrictConfig");
-const District0xEmails = artifacts.require ("District0xEmails");
+copy ("DSGuard", "DSGuardCp");
+const DSGuard = artifacts.require("DSGuardCp");
+
+copy ("MiniMeTokenFactory", "MiniMeTokenFactoryCp");
+const MiniMeTokenFactory = artifacts.require("MiniMeTokenFactoryCp");
+
+copy ("DankToken", "DankTokenCp");
+const DankToken = artifacts.require("DankTokenCp");
+
+copy ("DistrictConfig", "DistrictConfigCp");
+const DistrictConfig = artifacts.require("DistrictConfigCp");
+
+copy ("District0xEmails", "District0xEmailsCp");
+const District0xEmails = artifacts.require ("District0xEmailsCp");
 
 // copy artifacts for placeholder replacements
 copy ("EternalDb", "MemeRegistryDb");
@@ -246,17 +255,19 @@ module.exports = function(deployer, network, accounts) {
   });
 
   deployer.then (() => {
-    return [MemeRegistryForwarder.deployed (),
-            DankToken.deployed (),
-            MemeToken.deployed ()];
-  }).then ((
-    [memeRegistryForwarder,
-     dankToken,
-     memeToken]) => {
-       return deployer.deploy (MemeFactory, memeRegistryForwarder.address, dankToken.address, memeToken.address, opts);
-     }).then ((memeFactory) => {
-       console.log ("@@@ MemeFactory address", memeFactory.address);
-     });
+    return [
+      MemeRegistryForwarder.deployed (),
+      DankToken.deployed (),
+      MemeToken.deployed ()];
+  }).then (promises => Promise.all (promises))
+    .then ((
+      [memeRegistryForwarder,
+       dankToken,
+       memeToken]) => {
+         return deployer.deploy (MemeFactory, memeRegistryForwarder.address, dankToken.address, memeToken.address, opts);
+       }).then ((memeFactory) => {
+         console.log ("@@@ MemeFactory address", memeFactory.address);
+       });
 
   // link placehodlers
   deployer.then (() => {
@@ -314,7 +325,7 @@ module.exports = function(deployer, network, accounts) {
                                    [600,
                                     600,
                                     600,
-                                    "1000000000000000000",
+                                    1000000000000000000,
                                     50,
                                     50],
                                    opts);
@@ -581,7 +592,7 @@ module.exports = function(deployer, network, accounts) {
 
   deployer.deploy (District0xEmails, opts);
 
-  // TODO: create meme fails
+  // TODO: create meme reverts
   deployer.then (() => {
     return [DankToken.deployed (),
             MemeFactory.deployed ()]
@@ -589,105 +600,100 @@ module.exports = function(deployer, network, accounts) {
     .then ((
       [dankToken,
        memeFactory]) => {
-
-         var instance = web3.eth.contract(memeFactory.abi).at(memeFactory.address); 
-         var payload = instance.createMeme.getData(address, "QmWip6bd1hZXqXMiwzgNkS8dvYMh7ZD9VcjcLSooyEqx1F", 10);
-
-         // console.log ("PAYLOAD", payload);
-
+         var payload = memeFactory.contract.createMeme.getData(accounts[9], "QmWip6bd1hZXqXMiwzgNkS8dvYMh7ZD9VcjcLSooyEqx1F", 10);
          return dankToken.approveAndCall (memeFactory.address, 1e21, payload, opts);
        }).then (tx => {
          console.log ("DankToken/approveAndCall tx:", tx)
        });
-   
-  // TODO: json -> edn
-  deployer.then (function () {
-    return [
-      DSGuard.deployed (),
-      MiniMeTokenFactory.deployed (),
-      DankToken.deployed (),
-      DistrictConfig.deployed (),
-      MemeRegistryDb.deployed (),
-      ParamChangeRegistryDb.deployed (),
-      MemeRegistry.deployed (),
-      ParamChangeRegistry.deployed (),
-      MemeRegistryForwarder.deployed (),
-      ParamChangeRegistryForwarder.deployed (),
-      MemeToken.deployed (),
-      Meme.deployed (),
-      ParamChange.deployed (),
-      MemeFactory.deployed (),
-      ParamChangeFactory.deployed (),
-      MemeAuctionFactoryForwarder.deployed (),
-      MemeAuctionFactory.deployed (),
-      MemeAuction.deployed (),
-      District0xEmails.deployed ()];
-  }).then ( (promises) => {
-    return Promise.all(promises);
-  }).then ((
-    [dSGuard,
-     miniMeTokenFactory,
-     dankToken,
-     districtConfig,
-     memeRegistryDb,
-     paramChangeRegistryDb,
-     memeRegistry,
-     paramChangeRegistry,
-     memeRegistryForwarder,
-     paramChangeRegistryForwarder,
-     memeToken,
-     meme,
-     paramChange,
-     memeFactory,
-     paramChangeFactory,
-     memeAuctionFactoryForwarder,
-     memeAuctionFactory,
-     memeAuction,
-     district0xEmails]) => {
-       var smartContracts = JSON.stringify ({
-         "district-config" : {"name" : "DistrictConfig",
-                              "address" : districtConfig.address},
-         "ds-guard" : {"name" : "DSGuard",
-                       "address": dSGuard.address},
-         "param-change-registry" : {"name" : "ParamChangeRegistry",
-                                    "address": paramChangeRegistry.address},
-         "param-change-registry-db" : {"name" : "EternalDb",
-                                       "address": paramChangeRegistryDb.address},
-         "meme-registry-db" : {"name" : "EternalDb",
-                               "address" : memeRegistryDb.address},
-         "param-change" : {"name" : "ParamChange",
-                           "address" : paramChange.address},
-         "minime-token-factory" : {"name" : "MiniMeTokenFactory",
-                                   "address" : miniMeTokenFactory.address},
-         "meme-auction-factory" : {"name" : "MemeAuctionFactory",
-                                   "address" : memeAuctionFactory.address},
-         "meme-auction" : {"name" : "MemeAuction",
-                           "address" : memeAuction.address},
-         "param-change-factory" : {"name" : "ParamChangeFactory",
-                                   "address": paramChangeFactory.address},
-         "param-change-registry-fwd" : {"name" : "MutableForwarder",
-                                        "address" : paramChangeRegistryForwarder.address},
-         "meme-factory" : {"name": "MemeFactory",
-                           "address" : MemeFactory.address},
-         "meme-token" : {"name" : "MemeToken",
-                         "address" : memeToken.address},
-         "DANK" : {"name" : "DankToken",
-                   "address" : dankToken.address},
-         "meme-registry" : {"name" : "Registry",
-                            "address" : memeRegistry.address},
-         "meme" : {"name" : "Meme",
-                   "address": meme.address},
-         "meme-registry-fwd" : {"name" : "MutableForwarder",
-                                "address" : memeRegistryForwarder.address},
-         "meme-auction-factory-fwd" : {"name" : "MutableForwarder",
-                                       "address" : memeAuctionFactoryForwarder.address},
-         "district0x-emaild" : {"name" : "District0xEmails",
-                                "address" : district0xEmails.address}
 
-       });
-       console.log (smartContracts);
-       fs.writeFile('smartContracts.json', smartContracts);
-     });
+  // TODO: json -> edn
+  // deployer.then (function () {
+  //   return [
+  //     DSGuard.deployed (),
+  //     MiniMeTokenFactory.deployed (),
+  //     DankToken.deployed (),
+  //     DistrictConfig.deployed (),
+  //     MemeRegistryDb.deployed (),
+  //     ParamChangeRegistryDb.deployed (),
+  //     MemeRegistry.deployed (),
+  //     ParamChangeRegistry.deployed (),
+  //     MemeRegistryForwarder.deployed (),
+  //     ParamChangeRegistryForwarder.deployed (),
+  //     MemeToken.deployed (),
+  //     Meme.deployed (),
+  //     ParamChange.deployed (),
+  //     MemeFactory.deployed (),
+  //     ParamChangeFactory.deployed (),
+  //     MemeAuctionFactoryForwarder.deployed (),
+  //     MemeAuctionFactory.deployed (),
+  //     MemeAuction.deployed (),
+  //     District0xEmails.deployed ()];
+  // }).then ( (promises) => {
+  //   return Promise.all(promises);
+  // }).then ((
+  //   [dSGuard,
+  //    miniMeTokenFactory,
+  //    dankToken,
+  //    districtConfig,
+  //    memeRegistryDb,
+  //    paramChangeRegistryDb,
+  //    memeRegistry,
+  //    paramChangeRegistry,
+  //    memeRegistryForwarder,
+  //    paramChangeRegistryForwarder,
+  //    memeToken,
+  //    meme,
+  //    paramChange,
+  //    memeFactory,
+  //    paramChangeFactory,
+  //    memeAuctionFactoryForwarder,
+  //    memeAuctionFactory,
+  //    memeAuction,
+  //    district0xEmails]) => {
+  //      var smartContracts = JSON.stringify ({
+  //        "district-config" : {"name" : "DistrictConfig",
+  //                             "address" : districtConfig.address},
+  //        "ds-guard" : {"name" : "DSGuard",
+  //                      "address": dSGuard.address},
+  //        "param-change-registry" : {"name" : "ParamChangeRegistry",
+  //                                   "address": paramChangeRegistry.address},
+  //        "param-change-registry-db" : {"name" : "EternalDb",
+  //                                      "address": paramChangeRegistryDb.address},
+  //        "meme-registry-db" : {"name" : "EternalDb",
+  //                              "address" : memeRegistryDb.address},
+  //        "param-change" : {"name" : "ParamChange",
+  //                          "address" : paramChange.address},
+  //        "minime-token-factory" : {"name" : "MiniMeTokenFactory",
+  //                                  "address" : miniMeTokenFactory.address},
+  //        "meme-auction-factory" : {"name" : "MemeAuctionFactory",
+  //                                  "address" : memeAuctionFactory.address},
+  //        "meme-auction" : {"name" : "MemeAuction",
+  //                          "address" : memeAuction.address},
+  //        "param-change-factory" : {"name" : "ParamChangeFactory",
+  //                                  "address": paramChangeFactory.address},
+  //        "param-change-registry-fwd" : {"name" : "MutableForwarder",
+  //                                       "address" : paramChangeRegistryForwarder.address},
+  //        "meme-factory" : {"name": "MemeFactory",
+  //                          "address" : MemeFactory.address},
+  //        "meme-token" : {"name" : "MemeToken",
+  //                        "address" : memeToken.address},
+  //        "DANK" : {"name" : "DankToken",
+  //                  "address" : dankToken.address},
+  //        "meme-registry" : {"name" : "Registry",
+  //                           "address" : memeRegistry.address},
+  //        "meme" : {"name" : "Meme",
+  //                  "address": meme.address},
+  //        "meme-registry-fwd" : {"name" : "MutableForwarder",
+  //                               "address" : memeRegistryForwarder.address},
+  //        "meme-auction-factory-fwd" : {"name" : "MutableForwarder",
+  //                                      "address" : memeAuctionFactoryForwarder.address},
+  //        "district0x-emaild" : {"name" : "District0xEmails",
+  //                               "address" : district0xEmails.address}
+
+  //      });
+  //      console.log (smartContracts);
+  //      fs.writeFile('smartContracts.json', smartContracts);
+  //    });
 
   deployer.then (function () {
     console.log ("Done");
